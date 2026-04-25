@@ -1,0 +1,1875 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DSA Mentor — UI Prototype</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    /* =========================================================================
+       PROTOTYPE NAVIGATION (not part of the actual extension)
+       ========================================================================= */
+    .proto-nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 9999;
+      background: #0a0a0a;
+      border-bottom: 1px solid #222;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 20px;
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
+      color: #888;
+    }
+    .proto-nav__label { font-weight: 600; color: #fff; margin-right: 8px; }
+    .proto-nav button {
+      background: #1a1a1a;
+      border: 1px solid #333;
+      color: #ccc;
+      padding: 5px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      font: inherit;
+      font-size: 12px;
+      transition: all 150ms;
+    }
+    .proto-nav button:hover { background: #252525; border-color: #555; color: #fff; }
+    .proto-nav button.active { background: #10b981; border-color: #10b981; color: #fff; }
+
+    .proto-view { display: none; padding-top: 48px; }
+    .proto-view.active { display: flex; }
+
+    /* =========================================================================
+       DESIGN TOKENS
+       ========================================================================= */
+    :root {
+      /* Refined palette — richer blacks, warmer accents */
+      --bg-primary:    #0a0a0a;
+      --bg-secondary:  #111111;
+      --bg-tertiary:   #1a1a1a;
+      --bg-elevated:   #222222;
+      --bg-hover:      #2a2a2a;
+
+      --border-subtle:  #1e1e1e;
+      --border-default: #2a2a2a;
+      --border-strong:  #3a3a3a;
+
+      --text-primary:   #f5f5f5;
+      --text-secondary: #a1a1aa;
+      --text-tertiary:  #71717a;
+      --text-ghost:     #52525b;
+
+      --accent:         #10b981;  /* Emerald — premium green */
+      --accent-hover:   #059669;
+      --accent-glow:    rgba(16, 185, 129, 0.15);
+      --accent-ring:    rgba(16, 185, 129, 0.3);
+
+      --blue:           #3b82f6;
+      --purple:         #8b5cf6;
+      --amber:          #f59e0b;
+      --rose:           #f43f5e;
+
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      --font-mono: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 14px;
+      --radius-xl: 20px;
+      --radius-full: 9999px;
+
+      --shadow-glow: 0 0 20px rgba(16, 185, 129, 0.08);
+      --shadow-card: 0 1px 3px rgba(0,0,0,0.4), 0 4px 12px rgba(0,0,0,0.2);
+      --shadow-modal: 0 16px 48px rgba(0,0,0,0.6), 0 4px 16px rgba(0,0,0,0.4);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { font-size: 16px; }
+    body {
+      font-family: var(--font-sans);
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      -webkit-font-smoothing: antialiased;
+      min-height: 100vh;
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border-default); border-radius: var(--radius-full); }
+    ::-webkit-scrollbar-thumb:hover { background: var(--border-strong); }
+
+    /* =========================================================================
+       VIEW 1: AUTH SCREEN
+       ========================================================================= */
+    .auth-view {
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      background: var(--bg-primary);
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Ambient glow behind auth card */
+    .auth-view::before {
+      content: '';
+      position: absolute;
+      width: 360px;
+      height: 360px;
+      background: radial-gradient(circle, rgba(16,185,129,0.06) 0%, transparent 70%);
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -60%);
+      pointer-events: none;
+    }
+
+    .auth-card {
+      width: 100%;
+      max-width: 380px;
+      padding: 0 24px;
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* Logo */
+    .auth-logo {
+      width: 48px;
+      height: 48px;
+      background: linear-gradient(135deg, var(--accent) 0%, #059669 100%);
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      color: #fff;
+      margin-bottom: 16px;
+      box-shadow: 0 4px 16px rgba(16,185,129,0.25);
+    }
+
+    .auth-title {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--text-primary);
+      letter-spacing: -0.02em;
+      margin-bottom: 4px;
+    }
+
+    .auth-subtitle {
+      font-size: 14px;
+      color: var(--text-tertiary);
+      margin-bottom: 32px;
+    }
+
+    /* Auth tabs */
+    .auth-tabs {
+      display: flex;
+      width: 100%;
+      background: var(--bg-secondary);
+      border-radius: var(--radius-md);
+      padding: 3px;
+      margin-bottom: 24px;
+      gap: 2px;
+    }
+
+    .auth-tab-btn {
+      flex: 1;
+      background: none;
+      border: none;
+      color: var(--text-tertiary);
+      font: inherit;
+      font-size: 13px;
+      font-weight: 500;
+      padding: 8px 0;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 200ms;
+    }
+
+    .auth-tab-btn:hover { color: var(--text-secondary); }
+
+    .auth-tab-btn.active {
+      background: var(--bg-elevated);
+      color: var(--text-primary);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    }
+
+    /* Form */
+    .auth-form {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .field-label {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-secondary);
+    }
+
+    .field-input {
+      width: 100%;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-md);
+      color: var(--text-primary);
+      font-size: 14px;
+      padding: 10px 14px;
+      outline: none;
+      transition: border-color 200ms, box-shadow 200ms;
+    }
+
+    .field-input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-ring);
+    }
+
+    .field-input::placeholder { color: var(--text-ghost); }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border: none;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      font: inherit;
+      font-size: 14px;
+      font-weight: 500;
+      padding: 10px 18px;
+      transition: all 200ms;
+      white-space: nowrap;
+      text-decoration: none;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent) 0%, #059669 100%);
+      color: #fff;
+      box-shadow: 0 2px 8px rgba(16,185,129,0.25);
+    }
+    .btn-primary:hover {
+      box-shadow: 0 4px 16px rgba(16,185,129,0.35);
+      transform: translateY(-1px);
+    }
+    .btn-primary:active { transform: translateY(0); }
+
+    .btn-secondary {
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
+      border: 1px solid var(--border-default);
+    }
+    .btn-secondary:hover { background: var(--bg-elevated); border-color: var(--border-strong); }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--text-secondary);
+    }
+    .btn-ghost:hover { background: var(--bg-tertiary); color: var(--text-primary); }
+
+    .btn-full { width: 100%; }
+
+    .btn-sm {
+      font-size: 12px;
+      padding: 6px 12px;
+    }
+
+    .forgot-link {
+      background: none;
+      border: none;
+      font: inherit;
+      font-size: 13px;
+      color: var(--text-ghost);
+      cursor: pointer;
+      text-align: center;
+      transition: color 200ms;
+    }
+    .forgot-link:hover { color: var(--accent); }
+
+    .auth-divider {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      width: 100%;
+      margin: 24px 0;
+    }
+    .auth-divider__line { flex: 1; height: 1px; background: var(--border-default); }
+    .auth-divider__text { font-size: 12px; color: var(--text-ghost); }
+
+    .btn-google {
+      width: 100%;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-md);
+      color: var(--text-primary);
+      font-size: 14px;
+      font-weight: 500;
+      padding: 10px 18px;
+      cursor: pointer;
+      transition: all 200ms;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      font-family: inherit;
+    }
+    .btn-google:hover { background: var(--bg-tertiary); border-color: var(--border-strong); }
+
+    .btn-google svg { width: 18px; height: 18px; flex-shrink: 0; }
+
+    /* =========================================================================
+       VIEW 2: SIDEPANEL — WELCOME STATE
+       ========================================================================= */
+    .sidepanel-frame {
+      width: 400px;
+      height: 100vh;
+      margin-left: auto;
+      background: var(--bg-primary);
+      display: flex;
+      flex-direction: column;
+      border-left: 1px solid var(--border-subtle);
+    }
+
+    /* Header */
+    .sp-header {
+      padding: 14px 16px 0;
+      background: var(--bg-primary);
+      border-bottom: 1px solid var(--border-subtle);
+      flex-shrink: 0;
+    }
+
+    .sp-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .sp-brand__logo {
+      width: 28px;
+      height: 28px;
+      background: linear-gradient(135deg, var(--accent) 0%, #059669 100%);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      color: #fff;
+      flex-shrink: 0;
+    }
+
+    .sp-brand__name {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-primary);
+      letter-spacing: -0.01em;
+    }
+
+    .sp-brand__tag {
+      font-size: 11px;
+      color: var(--text-ghost);
+      padding: 2px 8px;
+      background: var(--bg-tertiary);
+      border-radius: var(--radius-full);
+      margin-left: auto;
+    }
+
+    .sp-logout {
+      background: none;
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-sm);
+      color: var(--text-ghost);
+      font: inherit;
+      font-size: 11px;
+      padding: 4px 10px;
+      cursor: pointer;
+      transition: all 150ms;
+      margin-left: 8px;
+      flex-shrink: 0;
+    }
+    .sp-logout:hover { color: var(--text-secondary); border-color: var(--border-strong); background: var(--bg-tertiary); }
+
+    /* Tab nav */
+    .sp-tabs {
+      display: flex;
+      margin: 0 -16px;
+    }
+
+    .sp-tab {
+      flex: 1;
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      color: var(--text-ghost);
+      font: inherit;
+      font-size: 12px;
+      font-weight: 500;
+      padding: 10px 0;
+      cursor: pointer;
+      transition: all 150ms;
+      text-align: center;
+      letter-spacing: 0.02em;
+    }
+    .sp-tab:hover { color: var(--text-secondary); }
+    .sp-tab.active {
+      color: var(--text-primary);
+      border-bottom-color: var(--accent);
+    }
+
+    /* Welcome section */
+    .sp-welcome {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px 24px;
+      gap: 16px;
+    }
+
+    .sp-welcome__icon {
+      width: 64px;
+      height: 64px;
+      background: var(--accent-glow);
+      border: 1px solid rgba(16,185,129,0.15);
+      border-radius: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      margin-bottom: 4px;
+    }
+
+    .sp-welcome__title {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--text-primary);
+      letter-spacing: -0.01em;
+    }
+
+    .sp-welcome__body {
+      font-size: 14px;
+      color: var(--text-tertiary);
+      line-height: 1.7;
+      max-width: 280px;
+    }
+
+    .sp-welcome__hint {
+      font-size: 12px;
+      color: var(--text-ghost);
+      margin-top: 8px;
+    }
+
+    .sp-welcome__hint a {
+      color: var(--accent);
+      text-decoration: underline;
+      text-underline-offset: 2px;
+      cursor: pointer;
+    }
+
+    /* =========================================================================
+       VIEW 3: SIDEPANEL — ACTIVE CHAT
+       ========================================================================= */
+    .sp-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      padding: 0;
+    }
+
+    /* Problem bar */
+    .problem-bar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 16px;
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border-subtle);
+      flex-shrink: 0;
+    }
+
+    .problem-bar__title {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-primary);
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 8px;
+      border-radius: var(--radius-full);
+      font-size: 11px;
+      font-weight: 500;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .pill-platform { background: var(--bg-elevated); color: var(--text-secondary); }
+    .pill-lang { background: var(--accent-glow); color: var(--accent); border: 1px solid rgba(16,185,129,0.2); }
+
+    /* Extraction controls */
+    .extract-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      flex-shrink: 0;
+    }
+
+    /* Chat thread */
+    .chat-thread {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .msg {
+      display: flex;
+      flex-direction: column;
+      max-width: 85%;
+      animation: msgIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes msgIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .msg-user { align-self: flex-end; align-items: flex-end; }
+    .msg-assistant { align-self: flex-start; align-items: flex-start; }
+
+    .msg__label {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+      padding: 0 6px;
+    }
+
+    .msg-user .msg__label { color: var(--accent); }
+    .msg-assistant .msg__label { color: var(--text-ghost); }
+
+    .msg__bubble {
+      padding: 10px 14px;
+      border-radius: 18px;
+      font-size: 13.5px;
+      line-height: 1.65;
+      word-break: break-word;
+    }
+
+    .msg-user .msg__bubble {
+      background: linear-gradient(135deg, var(--accent) 0%, #059669 100%);
+      color: #fff;
+      border-bottom-right-radius: 6px;
+    }
+
+    .msg-assistant .msg__bubble {
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      border: 1px solid var(--border-default);
+      border-bottom-left-radius: 6px;
+    }
+
+    /* Markdown inside bubbles */
+    .msg__bubble p { margin: 0 0 8px; }
+    .msg__bubble p:last-child { margin-bottom: 0; }
+    .msg__bubble strong { color: #fff; font-weight: 600; }
+    .msg__bubble em { color: #d4d4d8; font-style: italic; }
+
+    .msg__bubble code {
+      background: rgba(0,0,0,0.3);
+      color: #6ee7b7;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      padding: 1px 6px;
+      border-radius: 4px;
+    }
+
+    .msg-assistant .msg__bubble code {
+      background: var(--bg-tertiary);
+      color: #6ee7b7;
+      border: 1px solid var(--border-default);
+    }
+
+    .msg__bubble pre {
+      background: var(--bg-primary);
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-md);
+      padding: 12px 14px;
+      overflow-x: auto;
+      margin: 8px 0;
+    }
+
+    .msg__bubble pre code {
+      background: none;
+      border: none;
+      padding: 0;
+      font-size: 12px;
+      color: #e4e4e7;
+      line-height: 1.6;
+      white-space: pre;
+    }
+
+    .code-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-default);
+      border-bottom: none;
+      border-radius: var(--radius-md) var(--radius-md) 0 0;
+      padding: 6px 12px;
+      font-size: 11px;
+      color: var(--text-ghost);
+      font-family: var(--font-mono);
+      margin-top: 8px;
+    }
+    .code-header + pre {
+      border-top-left-radius: 0;
+      border-top-right-radius: 0;
+      margin-top: 0;
+    }
+
+    .msg__bubble ul, .msg__bubble ol { margin: 6px 0 6px 18px; }
+    .msg__bubble li { list-style: disc; margin-bottom: 4px; font-size: 13.5px; }
+    .msg__bubble ol li { list-style: decimal; }
+
+    .msg__bubble blockquote {
+      border-left: 3px solid var(--accent);
+      padding-left: 12px;
+      margin: 8px 0;
+      color: var(--text-secondary);
+      font-style: italic;
+    }
+
+    .msg__bubble h3 { font-size: 13.5px; font-weight: 600; color: #fff; margin: 8px 0 4px; }
+
+    /* Input area */
+    .sp-input {
+      padding: 12px 16px 14px;
+      border-top: 1px solid var(--border-subtle);
+      flex-shrink: 0;
+      background: var(--bg-primary);
+    }
+
+    .sp-input__box {
+      display: flex;
+      align-items: flex-end;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-lg);
+      padding: 4px 4px 4px 14px;
+      transition: border-color 200ms, box-shadow 200ms;
+    }
+
+    .sp-input__box:focus-within {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-ring);
+    }
+
+    .sp-input__textarea {
+      flex: 1;
+      background: none;
+      border: none;
+      color: var(--text-primary);
+      font: inherit;
+      font-size: 13.5px;
+      line-height: 1.5;
+      padding: 8px 0;
+      resize: none;
+      outline: none;
+      min-height: 24px;
+      max-height: 100px;
+    }
+    .sp-input__textarea::placeholder { color: var(--text-ghost); }
+
+    .sp-input__send {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, var(--accent) 0%, #059669 100%);
+      border: none;
+      border-radius: var(--radius-md);
+      color: #fff;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: all 200ms;
+      font-size: 16px;
+    }
+    .sp-input__send:hover { box-shadow: 0 2px 8px rgba(16,185,129,0.3); transform: translateY(-1px); }
+
+    .sp-input__footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 6px;
+      padding: 0 2px;
+    }
+
+    .sp-input__hint {
+      font-size: 11px;
+      color: var(--text-ghost);
+    }
+
+    .sp-input__hint kbd {
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-default);
+      border-radius: 3px;
+      padding: 0px 4px;
+      font-size: 10px;
+      font-family: var(--font-mono);
+      color: var(--text-tertiary);
+    }
+
+    /* Thinking indicator */
+    .thinking {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--text-ghost);
+    }
+
+    .thinking-dots {
+      display: flex;
+      gap: 3px;
+    }
+
+    .thinking-dots span {
+      width: 5px;
+      height: 5px;
+      background: var(--accent);
+      border-radius: 50%;
+      animation: pulse 1.4s infinite;
+    }
+    .thinking-dots span:nth-child(2) { animation-delay: 0.2s; }
+    .thinking-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes pulse {
+      0%, 80%, 100% { opacity: 0.2; transform: scale(0.8); }
+      40% { opacity: 1; transform: scale(1); }
+    }
+
+    /* =========================================================================
+       VIEW 4: SETTINGS TAB
+       ========================================================================= */
+    .sp-settings {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .settings-group {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .settings-group__title {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-ghost);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .provider-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+
+    .provider-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      background: var(--bg-secondary);
+      border: 1.5px solid var(--border-default);
+      border-radius: var(--radius-md);
+      padding: 14px 8px;
+      cursor: pointer;
+      transition: all 200ms;
+      text-align: center;
+      position: relative;
+    }
+    .provider-card:hover { border-color: var(--border-strong); background: var(--bg-tertiary); }
+
+    .provider-card.selected {
+      border-color: var(--accent);
+      background: var(--accent-glow);
+      box-shadow: 0 0 0 3px var(--accent-ring);
+    }
+
+    .provider-card__icon {
+      width: 36px;
+      height: 36px;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+
+    .provider-card__icon--claude { background: #d97706; color: #fff; }
+    .provider-card__icon--openai { background: #111; color: #fff; border: 1px solid #333; }
+    .provider-card__icon--gemini { background: #4285f4; color: #fff; }
+
+    .provider-card__name { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+    .provider-card__sub { font-size: 10px; color: var(--text-ghost); }
+
+    .provider-card__check {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      width: 16px;
+      height: 16px;
+      background: var(--accent);
+      border-radius: 50%;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      color: #fff;
+    }
+    .provider-card.selected .provider-card__check { display: flex; }
+
+    .form-select {
+      width: 100%;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-md);
+      color: var(--text-primary);
+      font-size: 13px;
+      padding: 9px 12px;
+      outline: none;
+      transition: border-color 200ms, box-shadow 200ms;
+      font-family: inherit;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%2371717a' fill='none' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+    }
+    .form-select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-ring); }
+
+    .api-key-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .api-key-row .field-input { flex: 1; font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.02em; }
+
+    .btn-icon {
+      width: 38px;
+      height: 38px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-md);
+      color: var(--text-tertiary);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 150ms;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+    .btn-icon:hover { background: var(--bg-tertiary); color: var(--text-primary); border-color: var(--border-strong); }
+
+    .api-status {
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .api-status--set { color: var(--accent); }
+    .api-status--not-set { color: var(--text-ghost); }
+
+    .api-status__dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .api-status--set .api-status__dot { background: var(--accent); }
+    .api-status--not-set .api-status__dot { background: var(--text-ghost); }
+
+    .info-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-md);
+      padding: 14px;
+    }
+
+    .info-card__list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .info-card__list li {
+      font-size: 12px;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .info-card__list a { color: var(--accent); text-decoration: underline; text-underline-offset: 2px; }
+
+    .info-card__note {
+      font-size: 11px;
+      color: var(--text-ghost);
+      margin-top: 10px;
+      line-height: 1.6;
+      padding-top: 10px;
+      border-top: 1px solid var(--border-subtle);
+    }
+
+    .save-msg {
+      font-size: 12px;
+      text-align: center;
+      padding: 8px 12px;
+      border-radius: var(--radius-sm);
+      background: rgba(16,185,129,0.1);
+      color: var(--accent);
+      border: 1px solid rgba(16,185,129,0.15);
+    }
+
+    /* =========================================================================
+       VIEW 5: HISTORY TAB
+       ========================================================================= */
+    .sp-history {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .history-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+
+    .history-header__title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .history-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-md);
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      transition: all 200ms;
+      cursor: pointer;
+    }
+    .history-card:hover {
+      border-color: var(--accent);
+      box-shadow: var(--shadow-glow);
+      transform: translateY(-1px);
+    }
+
+    .history-card__top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .history-card__title {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-primary);
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .history-card__meta {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .history-card__date { font-size: 11px; color: var(--text-ghost); }
+
+    .history-card__tags {
+      display: flex;
+      gap: 4px;
+    }
+
+    .tag-pill {
+      font-size: 10px;
+      font-weight: 500;
+      padding: 2px 8px;
+      border-radius: var(--radius-full);
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: all 150ms;
+    }
+
+    .tag-pill--revisit  { background: rgba(245,158,11,0.1); color: var(--amber); border-color: rgba(245,158,11,0.2); }
+    .tag-pill--confident { background: rgba(16,185,129,0.1); color: var(--accent); border-color: rgba(16,185,129,0.2); }
+    .tag-pill--confused  { background: rgba(244,63,94,0.1); color: var(--rose); border-color: rgba(244,63,94,0.2); }
+
+    /* Empty state */
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      padding: 48px 20px;
+      gap: 10px;
+    }
+
+    .empty-state__icon {
+      font-size: 36px;
+      opacity: 0.15;
+    }
+
+    .empty-state p {
+      font-size: 13px;
+      color: var(--text-ghost);
+      max-width: 240px;
+      line-height: 1.6;
+    }
+
+    /* =========================================================================
+       VIEW 6: DASHBOARD (FULL PAGE)
+       ========================================================================= */
+    .dash-view {
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    .dash-header {
+      padding: 18px 0;
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border-subtle);
+      flex-shrink: 0;
+    }
+
+    .dash-header__inner {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .dash-header__brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .dash-header__logo {
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(135deg, var(--accent) 0%, #059669 100%);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      color: #fff;
+    }
+
+    .dash-header__title { font-size: 18px; font-weight: 700; color: var(--text-primary); letter-spacing: -0.02em; }
+    .dash-header__sub {
+      font-size: 13px;
+      color: var(--text-ghost);
+      padding-left: 12px;
+      margin-left: 4px;
+      border-left: 1px solid var(--border-default);
+    }
+
+    .dash-header__actions { display: flex; align-items: center; gap: 12px; }
+    .dash-header__count { font-size: 13px; color: var(--text-tertiary); }
+
+    /* Filter bar */
+    .dash-filters {
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border-subtle);
+      padding: 12px 0;
+      position: sticky;
+      top: 48px;
+      z-index: 10;
+    }
+
+    .dash-filters__inner {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 0 24px;
+      display: flex;
+      align-items: flex-end;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    .filter-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-width: 140px;
+    }
+
+    .filter-label {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--text-ghost);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .filter-input {
+      background: var(--bg-primary);
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-sm);
+      color: var(--text-primary);
+      font-size: 13px;
+      padding: 7px 10px;
+      outline: none;
+      transition: border-color 200ms;
+      font-family: inherit;
+    }
+    .filter-input:focus { border-color: var(--accent); }
+
+    .filter-select {
+      background: var(--bg-primary);
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-sm);
+      color: var(--text-primary);
+      font-size: 13px;
+      padding: 7px 10px;
+      outline: none;
+      font-family: inherit;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%2371717a' fill='none' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+      padding-right: 28px;
+      transition: border-color 200ms;
+    }
+    .filter-select:focus { border-color: var(--accent); }
+
+    /* Dashboard main */
+    .dash-main {
+      flex: 1;
+      max-width: 1000px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    /* Problem cards */
+    .prob-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      transition: border-color 200ms;
+      margin-bottom: 12px;
+    }
+    .prob-card:hover { border-color: var(--border-strong); }
+
+    .prob-card__header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 16px 20px;
+      cursor: pointer;
+      user-select: none;
+      transition: background 150ms;
+    }
+    .prob-card__header:hover { background: var(--bg-tertiary); }
+
+    .prob-card__left { display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 0; }
+    .prob-card__title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-primary);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .prob-card__meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+    .prob-card__right { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+    .prob-card__count { font-size: 12px; color: var(--text-tertiary); }
+    .prob-card__chevron { font-size: 16px; color: var(--text-ghost); transition: transform 200ms; }
+
+    .prob-card__sessions { border-top: 1px solid var(--border-default); }
+
+    /* Session row */
+    .session-row {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--border-subtle);
+      transition: background 150ms;
+    }
+    .session-row:last-child { border-bottom: none; }
+    .session-row:hover { background: var(--bg-tertiary); }
+
+    .session-row__top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .session-row__date { font-size: 12px; color: var(--text-secondary); }
+    .session-row__provider {
+      font-size: 11px;
+      color: var(--text-ghost);
+      background: var(--bg-elevated);
+      border-radius: 4px;
+      padding: 1px 7px;
+    }
+
+    .session-row__preview {
+      font-size: 12px;
+      color: var(--text-tertiary);
+      line-height: 1.5;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .session-row__actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .session-row__turns { font-size: 11px; color: var(--text-ghost); margin-right: auto; }
+
+    .session-row__view {
+      font-size: 11px;
+      padding: 5px 12px;
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-sm);
+      color: var(--text-secondary);
+      background: none;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 150ms;
+    }
+    .session-row__view:hover {
+      background: var(--bg-elevated);
+      color: var(--text-primary);
+      border-color: var(--accent);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- PROTOTYPE NAVIGATION -->
+  <div class="proto-nav">
+    <span class="proto-nav__label">DSA Mentor Prototype</span>
+    <button class="active" onclick="showView('auth')">Auth</button>
+    <button onclick="showView('welcome')">Welcome</button>
+    <button onclick="showView('chat')">Chat</button>
+    <button onclick="showView('settings')">Settings</button>
+    <button onclick="showView('history')">History</button>
+    <button onclick="showView('dashboard')">Dashboard</button>
+  </div>
+
+  <!-- ======================================================================
+       VIEW 1: AUTH SCREEN
+       ====================================================================== -->
+  <div id="view-auth" class="proto-view auth-view active">
+    <div class="auth-card">
+      <div class="auth-logo">&#10022;</div>
+      <div class="auth-title">DSA Mentor</div>
+      <div class="auth-subtitle">Your Socratic AI guide for DSA mastery</div>
+
+      <div class="auth-tabs">
+        <button class="auth-tab-btn active">Log in</button>
+        <button class="auth-tab-btn">Sign up</button>
+      </div>
+
+      <form class="auth-form" onsubmit="return false">
+        <div class="field">
+          <label class="field-label">Email</label>
+          <input type="email" class="field-input" placeholder="you@example.com" />
+        </div>
+        <div class="field">
+          <label class="field-label">Password</label>
+          <input type="password" class="field-input" placeholder="Your password" />
+        </div>
+        <button class="btn btn-primary btn-full">Sign in</button>
+        <button type="button" class="forgot-link">Forgot password?</button>
+      </form>
+
+      <div class="auth-divider">
+        <span class="auth-divider__line"></span>
+        <span class="auth-divider__text">or</span>
+        <span class="auth-divider__line"></span>
+      </div>
+
+      <button class="btn-google">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+          <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+          <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
+          <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+        </svg>
+        Continue with Google
+      </button>
+    </div>
+  </div>
+
+  <!-- ======================================================================
+       VIEW 2: SIDEPANEL — WELCOME
+       ====================================================================== -->
+  <div id="view-welcome" class="proto-view" style="justify-content:flex-end">
+    <div class="sidepanel-frame">
+      <div class="sp-header">
+        <div class="sp-brand">
+          <div class="sp-brand__logo">&#10022;</div>
+          <span class="sp-brand__name">DSA Mentor</span>
+          <span class="sp-brand__tag">Socratic AI</span>
+          <button class="sp-logout">Sign out</button>
+        </div>
+        <div class="sp-tabs">
+          <button class="sp-tab active">Mentor</button>
+          <button class="sp-tab">Settings</button>
+          <button class="sp-tab">History</button>
+        </div>
+      </div>
+      <div class="sp-welcome">
+        <div class="sp-welcome__icon">&#10022;</div>
+        <h2 class="sp-welcome__title">Welcome to DSA Mentor</h2>
+        <p class="sp-welcome__body">
+          Navigate to a problem on LeetCode, NeetCode, or TakeUForward, then extract the code to start.
+        </p>
+        <button class="btn btn-primary btn-full" style="max-width:280px">
+          Extract Code from Page
+        </button>
+        <p class="sp-welcome__hint">
+          No API key yet? Head to <a>Settings</a> to add one.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================================
+       VIEW 3: SIDEPANEL — ACTIVE CHAT
+       ====================================================================== -->
+  <div id="view-chat" class="proto-view" style="justify-content:flex-end">
+    <div class="sidepanel-frame">
+      <div class="sp-header">
+        <div class="sp-brand">
+          <div class="sp-brand__logo">&#10022;</div>
+          <span class="sp-brand__name">DSA Mentor</span>
+          <span class="sp-brand__tag">Socratic AI</span>
+          <button class="sp-logout">Sign out</button>
+        </div>
+        <div class="sp-tabs">
+          <button class="sp-tab active">Mentor</button>
+          <button class="sp-tab">Settings</button>
+          <button class="sp-tab">History</button>
+        </div>
+      </div>
+
+      <div class="sp-body">
+        <!-- Problem bar -->
+        <div class="problem-bar">
+          <span class="problem-bar__title">Two Sum</span>
+          <span class="pill pill-platform">LeetCode</span>
+          <span class="pill pill-lang">python3</span>
+        </div>
+
+        <!-- Extract controls -->
+        <div class="extract-controls">
+          <button class="btn btn-secondary btn-sm">&#8635; Re-extract</button>
+          <button class="btn btn-ghost btn-sm">Clear Chat</button>
+        </div>
+
+        <!-- Chat -->
+        <div class="chat-thread">
+
+          <div class="msg msg-user">
+            <span class="msg__label">You</span>
+            <div class="msg__bubble">I don't know where to start with this problem. Can you help?</div>
+          </div>
+
+          <div class="msg msg-assistant">
+            <span class="msg__label">Mentor</span>
+            <div class="msg__bubble">
+              <p>Great question! Let's think about this step by step.</p>
+              <h3>Key Insight</h3>
+              <p>The brute force approach would check every pair, giving us <strong>O(n&sup2;)</strong> time. But we can do better.</p>
+              <blockquote>Think about it: for each number, what specific value would you need to find to complete the sum?</blockquote>
+              <p>What data structure lets you check "does this value exist?" in <strong>O(1)</strong> time?</p>
+            </div>
+          </div>
+
+          <div class="msg msg-user">
+            <span class="msg__label">You</span>
+            <div class="msg__bubble">A hash map! So I store each number and check if the complement exists?</div>
+          </div>
+
+          <div class="msg msg-assistant">
+            <span class="msg__label">Mentor</span>
+            <div class="msg__bubble">
+              <p>Exactly right! Here's the skeleton to guide you:</p>
+              <div class="code-header"><span>python</span></div>
+              <pre><code>def twoSum(nums, target):
+    seen = {}
+    for i, num in enumerate(nums):
+        complement = target - num
+        if complement in seen:
+            return [seen[complement], i]
+        seen[num] = i</code></pre>
+              <p>Now try implementing it yourself. A few things to consider:</p>
+              <ul>
+                <li>What happens if the same element is used twice?</li>
+                <li>Why do we check <code>complement in seen</code> <em>before</em> adding <code>num</code>?</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- Thinking indicator -->
+          <div class="msg msg-assistant">
+            <span class="msg__label">Mentor</span>
+            <div class="msg__bubble">
+              <div class="thinking">
+                <div class="thinking-dots">
+                  <span></span><span></span><span></span>
+                </div>
+                Thinking...
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Input -->
+        <div class="sp-input">
+          <div class="sp-input__box">
+            <textarea class="sp-input__textarea" placeholder="Ask about the problem..." rows="1"></textarea>
+            <button class="sp-input__send">&#8593;</button>
+          </div>
+          <div class="sp-input__footer">
+            <span class="sp-input__hint"><kbd>Ctrl</kbd> + <kbd>Enter</kbd></span>
+            <span style="font-size:11px;color:var(--text-ghost)">Claude 3.5 Sonnet</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================================
+       VIEW 4: SIDEPANEL — SETTINGS
+       ====================================================================== -->
+  <div id="view-settings" class="proto-view" style="justify-content:flex-end">
+    <div class="sidepanel-frame">
+      <div class="sp-header">
+        <div class="sp-brand">
+          <div class="sp-brand__logo">&#10022;</div>
+          <span class="sp-brand__name">DSA Mentor</span>
+          <span class="sp-brand__tag">Socratic AI</span>
+          <button class="sp-logout">Sign out</button>
+        </div>
+        <div class="sp-tabs">
+          <button class="sp-tab">Mentor</button>
+          <button class="sp-tab active">Settings</button>
+          <button class="sp-tab">History</button>
+        </div>
+      </div>
+
+      <div class="sp-settings">
+        <div class="settings-group">
+          <span class="settings-group__title">AI Provider</span>
+          <div class="provider-grid">
+            <div class="provider-card selected">
+              <div class="provider-card__check">&#10003;</div>
+              <div class="provider-card__icon provider-card__icon--claude">C</div>
+              <span class="provider-card__name">Claude</span>
+              <span class="provider-card__sub">Anthropic</span>
+            </div>
+            <div class="provider-card">
+              <div class="provider-card__check">&#10003;</div>
+              <div class="provider-card__icon provider-card__icon--openai">G</div>
+              <span class="provider-card__name">GPT</span>
+              <span class="provider-card__sub">OpenAI</span>
+            </div>
+            <div class="provider-card">
+              <div class="provider-card__check">&#10003;</div>
+              <div class="provider-card__icon provider-card__icon--gemini">G</div>
+              <span class="provider-card__name">Gemini</span>
+              <span class="provider-card__sub">Google</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-group">
+          <span class="settings-group__title">Model</span>
+          <select class="form-select">
+            <option>Claude 3.5 Sonnet</option>
+            <option>Claude 3 Opus</option>
+            <option>Claude 3 Haiku</option>
+          </select>
+        </div>
+
+        <div class="settings-group">
+          <span class="settings-group__title">API Key</span>
+          <div class="api-key-row">
+            <input type="password" class="field-input" placeholder="sk-ant-..." value="sk-ant-api03-xxxx...xxxx" style="font-family:var(--font-mono);font-size:12px" />
+            <button class="btn-icon" title="Show/hide key">&#128065;</button>
+          </div>
+          <div class="api-status api-status--set">
+            <span class="api-status__dot"></span>
+            API key configured
+          </div>
+          <button class="btn btn-primary btn-full">Save Settings</button>
+          <div class="save-msg">Settings saved successfully</div>
+        </div>
+
+        <div class="info-card">
+          <span class="settings-group__title">Where to get API keys</span>
+          <ul class="info-card__list">
+            <li><strong style="color:var(--text-primary);min-width:52px">Claude</strong> <a href="#">console.anthropic.com</a></li>
+            <li><strong style="color:var(--text-primary);min-width:52px">OpenAI</strong> <a href="#">platform.openai.com/api-keys</a></li>
+            <li><strong style="color:var(--text-primary);min-width:52px">Gemini</strong> <a href="#">aistudio.google.com</a></li>
+          </ul>
+          <p class="info-card__note">
+            API keys are stored locally in your browser and never sent anywhere except the AI provider's API.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================================
+       VIEW 5: SIDEPANEL — HISTORY
+       ====================================================================== -->
+  <div id="view-history" class="proto-view" style="justify-content:flex-end">
+    <div class="sidepanel-frame">
+      <div class="sp-header">
+        <div class="sp-brand">
+          <div class="sp-brand__logo">&#10022;</div>
+          <span class="sp-brand__name">DSA Mentor</span>
+          <span class="sp-brand__tag">Socratic AI</span>
+          <button class="sp-logout">Sign out</button>
+        </div>
+        <div class="sp-tabs">
+          <button class="sp-tab">Mentor</button>
+          <button class="sp-tab">Settings</button>
+          <button class="sp-tab active">History</button>
+        </div>
+      </div>
+
+      <div class="sp-history">
+        <div class="history-header">
+          <span class="history-header__title">Saved Conversations</span>
+          <button class="btn btn-ghost btn-sm">Open Dashboard &#8599;</button>
+        </div>
+
+        <div class="history-card">
+          <div class="history-card__top">
+            <span class="history-card__title">Two Sum</span>
+            <span class="pill pill-platform" style="font-size:10px">LeetCode</span>
+          </div>
+          <div class="history-card__meta">
+            <span class="history-card__date">Today, 2:15 PM</span>
+            <span class="pill pill-lang" style="font-size:10px">python3</span>
+            <span class="tag-pill tag-pill--confident">Confident</span>
+          </div>
+        </div>
+
+        <div class="history-card">
+          <div class="history-card__top">
+            <span class="history-card__title">Longest Substring Without Repeating Characters</span>
+            <span class="pill pill-platform" style="font-size:10px">LeetCode</span>
+          </div>
+          <div class="history-card__meta">
+            <span class="history-card__date">Yesterday, 9:30 AM</span>
+            <span class="pill pill-lang" style="font-size:10px">javascript</span>
+            <span class="tag-pill tag-pill--revisit">Revisit</span>
+          </div>
+        </div>
+
+        <div class="history-card">
+          <div class="history-card__top">
+            <span class="history-card__title">Merge Two Sorted Lists</span>
+            <span class="pill pill-platform" style="font-size:10px">NeetCode</span>
+          </div>
+          <div class="history-card__meta">
+            <span class="history-card__date">Apr 9, 4:45 PM</span>
+            <span class="pill pill-lang" style="font-size:10px">java</span>
+            <span class="tag-pill tag-pill--confused">Confused</span>
+          </div>
+        </div>
+
+        <div class="history-card">
+          <div class="history-card__top">
+            <span class="history-card__title">Valid Parentheses</span>
+            <span class="pill pill-platform" style="font-size:10px">Striver</span>
+          </div>
+          <div class="history-card__meta">
+            <span class="history-card__date">Apr 8, 11:00 AM</span>
+            <span class="pill pill-lang" style="font-size:10px">cpp</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================================
+       VIEW 6: DASHBOARD (FULL PAGE)
+       ====================================================================== -->
+  <div id="view-dashboard" class="proto-view dash-view">
+    <div class="dash-header">
+      <div class="dash-header__inner">
+        <div class="dash-header__brand">
+          <div class="dash-header__logo">&#10022;</div>
+          <span class="dash-header__title">DSA Mentor</span>
+          <span class="dash-header__sub">Conversation Dashboard</span>
+        </div>
+        <div class="dash-header__actions">
+          <button class="btn btn-secondary btn-sm">Export JSON</button>
+          <span class="dash-header__count">12 conversations</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="dash-filters">
+      <div class="dash-filters__inner">
+        <div class="filter-group" style="flex:1;min-width:180px">
+          <label class="filter-label">Search</label>
+          <input type="text" class="filter-input" placeholder="Problem title..." style="width:100%" />
+        </div>
+        <div class="filter-group">
+          <label class="filter-label">Platform</label>
+          <select class="filter-select">
+            <option>All platforms</option>
+            <option>LeetCode</option>
+            <option>NeetCode</option>
+            <option>Striver</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label class="filter-label">Tag</label>
+          <select class="filter-select">
+            <option>All tags</option>
+            <option>Revisit</option>
+            <option>Confident</option>
+            <option>Confused</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label class="filter-label">Provider</label>
+          <select class="filter-select">
+            <option>All providers</option>
+            <option>Claude</option>
+            <option>OpenAI</option>
+            <option>Gemini</option>
+          </select>
+        </div>
+        <button class="btn btn-ghost btn-sm" style="align-self:flex-end;margin-bottom:1px">Reset</button>
+      </div>
+    </div>
+
+    <div class="dash-main">
+
+      <!-- Problem Card 1 -->
+      <div class="prob-card">
+        <div class="prob-card__header">
+          <div class="prob-card__left">
+            <span class="prob-card__title">Two Sum</span>
+            <div class="prob-card__meta">
+              <span class="pill pill-platform" style="font-size:10px">LeetCode</span>
+              <span style="font-size:11px;color:var(--text-ghost)">Last: Today</span>
+            </div>
+          </div>
+          <div class="prob-card__right">
+            <span class="prob-card__count">3 sessions</span>
+            <span class="prob-card__chevron">&#9660;</span>
+          </div>
+        </div>
+        <div class="prob-card__sessions">
+          <div class="session-row">
+            <div class="session-row__top">
+              <span class="session-row__date">Today, 2:15 PM</span>
+              <span class="session-row__provider">Claude</span>
+              <span class="tag-pill tag-pill--confident">Confident</span>
+            </div>
+            <p class="session-row__preview">"I used a hash map approach to solve it in O(n) time. The key insight was storing complements..."</p>
+            <div class="session-row__actions">
+              <span class="session-row__turns">6 turns</span>
+              <button class="session-row__view">View</button>
+              <button class="session-row__view">Export</button>
+            </div>
+          </div>
+          <div class="session-row">
+            <div class="session-row__top">
+              <span class="session-row__date">Apr 8, 10:30 AM</span>
+              <span class="session-row__provider">GPT</span>
+              <span class="tag-pill tag-pill--revisit">Revisit</span>
+            </div>
+            <p class="session-row__preview">"I tried brute force first but it was too slow. Need to optimize with a better data structure..."</p>
+            <div class="session-row__actions">
+              <span class="session-row__turns">4 turns</span>
+              <button class="session-row__view">View</button>
+              <button class="session-row__view">Export</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Problem Card 2 -->
+      <div class="prob-card">
+        <div class="prob-card__header">
+          <div class="prob-card__left">
+            <span class="prob-card__title">Longest Substring Without Repeating Characters</span>
+            <div class="prob-card__meta">
+              <span class="pill pill-platform" style="font-size:10px">LeetCode</span>
+              <span style="font-size:11px;color:var(--text-ghost)">Last: Yesterday</span>
+            </div>
+          </div>
+          <div class="prob-card__right">
+            <span class="prob-card__count">2 sessions</span>
+            <span class="prob-card__chevron">&#9654;</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Problem Card 3 -->
+      <div class="prob-card">
+        <div class="prob-card__header">
+          <div class="prob-card__left">
+            <span class="prob-card__title">Merge Two Sorted Lists</span>
+            <div class="prob-card__meta">
+              <span class="pill pill-platform" style="font-size:10px">NeetCode</span>
+              <span style="font-size:11px;color:var(--text-ghost)">Last: Apr 9</span>
+            </div>
+          </div>
+          <div class="prob-card__right">
+            <span class="prob-card__count">1 session</span>
+            <span class="prob-card__chevron">&#9654;</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Problem Card 4 -->
+      <div class="prob-card">
+        <div class="prob-card__header">
+          <div class="prob-card__left">
+            <span class="prob-card__title">Valid Parentheses</span>
+            <div class="prob-card__meta">
+              <span class="pill pill-platform" style="font-size:10px">Striver</span>
+              <span style="font-size:11px;color:var(--text-ghost)">Last: Apr 8</span>
+            </div>
+          </div>
+          <div class="prob-card__right">
+            <span class="prob-card__count">1 session</span>
+            <span class="prob-card__chevron">&#9654;</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    function showView(name) {
+      document.querySelectorAll('.proto-view').forEach(v => v.classList.remove('active'));
+      document.querySelectorAll('.proto-nav button').forEach(b => b.classList.remove('active'));
+      document.getElementById('view-' + name).classList.add('active');
+      event.target.classList.add('active');
+    }
+
+    // Auth tab switching
+    document.querySelectorAll('.auth-tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.auth-tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+      });
+    });
+
+    // Provider card selection
+    document.querySelectorAll('.provider-card').forEach(card => {
+      card.addEventListener('click', () => {
+        document.querySelectorAll('.provider-card').forEach(c => c.classList.remove('selected'));
+        card.classList.add('selected');
+      });
+    });
+
+    // Sidepanel tab switching
+    document.querySelectorAll('.sp-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        const parent = tab.closest('.sp-header');
+        parent.querySelectorAll('.sp-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+      });
+    });
+
+    // Dashboard prob card expand/collapse
+    document.querySelectorAll('.prob-card__header').forEach(header => {
+      header.addEventListener('click', () => {
+        const sessions = header.nextElementSibling;
+        const chevron = header.querySelector('.prob-card__chevron');
+        if (sessions && sessions.classList.contains('prob-card__sessions')) {
+          if (sessions.style.display === 'none') {
+            sessions.style.display = '';
+            chevron.innerHTML = '&#9660;';
+          } else {
+            sessions.style.display = 'none';
+            chevron.innerHTML = '&#9654;';
+          }
+        }
+      });
+    });
+  </script>
+
+</body>
+</html>

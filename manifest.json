@@ -1,0 +1,93 @@
+{
+  "manifest_version": 3,
+  "name": "DSA Mentor",
+  "version": "1.0.0",
+  "description": "Socratic AI mentor for LeetCode, NeetCode, and Striver — get guided hints, never spoilers.",
+
+  "permissions": [
+    "storage",
+    "scripting",
+    "sidePanel",
+    "activeTab",
+    "tabs",
+    "identity"
+  ],
+
+  "host_permissions": [
+    "https://leetcode.com/*",
+    "https://neetcode.io/*",
+    "https://takeuforward.org/*",
+    "https://api.anthropic.com/*",
+    "https://api.openai.com/*",
+    "https://generativelanguage.googleapis.com/*",
+    "https://glogzopsxrgjkqltwjto.supabase.co/*"
+  ],
+
+  "background": {
+    "service_worker": "background/service-worker.js",
+    "type": "module"
+  },
+
+  "side_panel": {
+    "default_path": "sidepanel/sidepanel.html"
+  },
+
+  "action": {
+    "default_title": "DSA Mentor",
+    "default_icon": {
+      "16": "assets/icons/icon16.png",
+      "48": "assets/icons/icon48.png",
+      "128": "assets/icons/icon128.png"
+    }
+  },
+
+  "commands": {
+    "open-mentor-panel": {
+      "suggested_key": {
+        "default": "Alt+7",
+        "mac": "Command+7"
+      },
+      "description": "Open DSA Mentor side panel"
+    }
+  },
+
+  "options_page": "dashboard/dashboard.html",
+
+  "content_scripts": [
+    {
+      "matches": [
+        "https://leetcode.com/*",
+        "https://neetcode.io/*",
+        "https://takeuforward.org/*"
+      ],
+      "js": [
+        "content-scripts/platform-init.js",
+        "content-scripts/leetcode-adapter.js",
+        "content-scripts/neetcode-adapter.js",
+        "content-scripts/striver-adapter.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+
+  "web_accessible_resources": [
+    {
+      "resources": ["injected/injected-script.js"],
+      "matches": [
+        "https://leetcode.com/*",
+        "https://neetcode.io/*",
+        "https://takeuforward.org/*"
+      ]
+    }
+  ],
+
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  },
+
+  "icons": {
+    "16": "assets/icons/icon16.png",
+    "48": "assets/icons/icon48.png",
+    "128": "assets/icons/icon128.png"
+  }
+}

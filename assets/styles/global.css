@@ -1,0 +1,236 @@
+/**
+ * global.css — Design system tokens and base reset for DSA Mentor extension.
+ *
+ * Imported by sidepanel.html, dashboard.html.
+ * All colours, spacing, and typography live here as CSS custom properties.
+ *
+ * Premium dark theme — true blacks with emerald accent.
+ *
+ * @author   DSA Mentor Extension
+ * @created  2026-04-08
+ */
+
+/* ===========================================================================
+   1. CSS Custom Properties (Design Tokens)
+   =========================================================================== */
+
+:root {
+  /* ---- Colour Palette ---- */
+
+  --color-primary:        #10b981; /* Emerald-500 */
+  --color-primary-hover:  #059669; /* Emerald-600 */
+  --color-primary-light:  rgba(16, 185, 129, 0.15);
+  --color-primary-ring:   rgba(16, 185, 129, 0.3);
+  --color-primary-glow:   rgba(16, 185, 129, 0.08);
+
+  /* Background layers — true blacks with subtle elevation */
+  --color-bg:             #0a0a0a;
+  --color-surface:        #111111;
+  --color-surface-raised: #1a1a1a;
+  --color-surface-hover:  #222222;
+  --color-elevated:       #2a2a2a;
+
+  /* Text colours */
+  --color-text:           #f5f5f5;
+  --color-text-secondary: #a1a1aa;
+  --color-text-muted:     #71717a;
+  --color-text-ghost:     #52525b;
+  --color-text-inverse:   #0a0a0a;
+
+  /* Borders */
+  --color-border:         #2a2a2a;
+  --color-border-subtle:  #1e1e1e;
+  --color-border-strong:  #3a3a3a;
+  --color-border-focus:   #10b981;
+
+  /* Semantic colours */
+  --color-success:        #10b981;
+  --color-success-bg:     rgba(16, 185, 129, 0.1);
+  --color-error:          #f43f5e;
+  --color-error-bg:       rgba(244, 63, 94, 0.1);
+  --color-warning:        #f59e0b;
+  --color-warning-bg:     rgba(245, 158, 11, 0.1);
+
+  /* ---- Typography ---- */
+
+  --font-sans:
+    'Inter',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    'Helvetica Neue',
+    Arial,
+    sans-serif;
+
+  --font-mono:
+    'JetBrains Mono',
+    'Fira Code',
+    'Cascadia Code',
+    'Consolas',
+    'Courier New',
+    monospace;
+
+  --font-size-xs:   0.75rem;   /*  12px */
+  --font-size-sm:   0.875rem;  /*  14px */
+  --font-size-base: 1rem;      /*  16px */
+  --font-size-lg:   1.125rem;  /*  18px */
+  --font-size-xl:   1.25rem;   /*  20px */
+  --font-size-2xl:  1.5rem;    /*  24px */
+
+  --font-weight-normal:   400;
+  --font-weight-medium:   500;
+  --font-weight-semibold: 600;
+  --font-weight-bold:     700;
+
+  --line-height-tight:  1.25;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.75;
+
+  /* ---- Spacing Scale ---- */
+
+  --space-1:  0.25rem;  /*  4px */
+  --space-2:  0.5rem;   /*  8px */
+  --space-3:  0.75rem;  /* 12px */
+  --space-4:  1rem;     /* 16px */
+  --space-5:  1.25rem;  /* 20px */
+  --space-6:  1.5rem;   /* 24px */
+  --space-8:  2rem;     /* 32px */
+  --space-10: 2.5rem;   /* 40px */
+  --space-12: 3rem;     /* 48px */
+
+  /* ---- Border Radius ---- */
+
+  --radius-sm:   6px;
+  --radius-md:   10px;
+  --radius-lg:   14px;
+  --radius-xl:   20px;
+  --radius-full: 9999px;
+
+  /* ---- Shadows ---- */
+
+  --shadow-sm:   0 1px 2px 0 rgb(0 0 0 / 0.3);
+  --shadow-md:   0 4px 6px -1px rgb(0 0 0 / 0.4), 0 2px 4px -2px rgb(0 0 0 / 0.3);
+  --shadow-lg:   0 10px 15px -3px rgb(0 0 0 / 0.5), 0 4px 6px -4px rgb(0 0 0 / 0.4);
+  --shadow-glow: 0 0 20px var(--color-primary-glow);
+
+  /* ---- Transitions ---- */
+
+  --transition-fast:   150ms ease-in-out;
+  --transition-normal: 200ms ease-in-out;
+  --transition-slow:   350ms ease-in-out;
+
+  /* ---- Layout ---- */
+
+  --panel-width: 400px;
+  --dashboard-max-width: 1000px;
+
+  /* ---- Z-Index Scale ---- */
+
+  --z-base:    0;
+  --z-raised:  10;
+  --z-overlay: 100;
+  --z-modal:   200;
+  --z-toast:   300;
+}
+
+/* ===========================================================================
+   2. Base Reset
+   =========================================================================== */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  font-family: var(--font-sans);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-normal);
+  line-height: var(--line-height-normal);
+  color: var(--color-text);
+  background-color: var(--color-bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+ul,
+ol {
+  list-style: none;
+}
+
+img,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+a {
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+/* ===========================================================================
+   3. Utility Classes
+   =========================================================================== */
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ===========================================================================
+   4. Scrollbar Styling (Chromium only)
+   =========================================================================== */
+
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--color-border);
+  border-radius: var(--radius-full);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--color-border-strong);
+}

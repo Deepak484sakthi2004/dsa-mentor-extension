@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>DSA Mentor — Supabase Connection Test</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', -apple-system, sans-serif; background: #0a0a0a; color: #f5f5f5; padding: 24px; min-height: 100vh; }
+    h1 { font-size: 20px; font-weight: 700; margin-bottom: 24px; }
+    h2 { font-size: 15px; font-weight: 600; color: #a1a1aa; margin: 24px 0 12px; }
+    .card { background: #111; border: 1px solid #2a2a2a; border-radius: 10px; padding: 16px; margin-bottom: 12px; }
+    .test-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid #1e1e1e; }
+    .test-row:last-child { border-bottom: none; }
+    .test-name { flex: 1; font-size: 13px; }
+    .test-status { font-size: 12px; font-weight: 600; padding: 3px 10px; border-radius: 20px; }
+    .status-pending { background: #1a1a1a; color: #71717a; }
+    .status-running { background: rgba(59,130,246,0.15); color: #3b82f6; }
+    .status-pass { background: rgba(16,185,129,0.15); color: #10b981; }
+    .status-fail { background: rgba(244,63,94,0.15); color: #f43f5e; }
+    .test-detail { font-size: 11px; color: #71717a; margin-top: 4px; word-break: break-all; }
+    .test-detail.error { color: #f43f5e; }
+    .log-area { background: #0a0a0a; border: 1px solid #2a2a2a; border-radius: 8px; padding: 12px; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #a1a1aa; max-height: 300px; overflow-y: auto; white-space: pre-wrap; margin-top: 12px; }
+    button { background: linear-gradient(135deg, #10b981, #059669); color: #fff; border: none; border-radius: 8px; padding: 10px 20px; font: inherit; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 200ms; }
+    button:hover { box-shadow: 0 4px 16px rgba(16,185,129,0.35); transform: translateY(-1px); }
+    button:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
+    .actions { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; align-items: center; }
+    input { background: #111; border: 1px solid #2a2a2a; border-radius: 8px; color: #f5f5f5; padding: 8px 12px; font: inherit; font-size: 13px; outline: none; width: 240px; }
+    input:focus { border-color: #10b981; box-shadow: 0 0 0 3px rgba(16,185,129,0.3); }
+    input::placeholder { color: #52525b; }
+    label { font-size: 12px; color: #71717a; display: block; margin-bottom: 4px; }
+    .field { display: flex; flex-direction: column; }
+  </style>
+</head>
+<body>
+
+  <h1>Supabase Connection Test</h1>
+
+  <div class="actions">
+    <button id="btn-run-basic" onclick="runBasicTests()">Run Connection Tests</button>
+    <button id="btn-run-auth" onclick="runAuthTests()" disabled>Run Auth Tests</button>
+  </div>
+
+  <div class="actions" style="margin-top:8px">
+    <div class="field">
+      <label>Email</label>
+      <input type="email" id="test-email" placeholder="test@example.com" />
+    </div>
+    <div class="field">
+      <label>Password</label>
+      <input type="password" id="test-password" placeholder="password123" />
+    </div>
+  </div>
+
+  <h2>Connection Tests</h2>
+  <div class="card" id="basic-tests">
+    <div class="test-row" id="test-health">
+      <span class="test-name">1. Supabase URL reachable (health check)</span>
+      <span class="test-status status-pending">PENDING</span>
+    </div>
+    <div class="test-row" id="test-auth-endpoint">
+      <span class="test-name">2. Auth endpoint responds</span>
+      <span class="test-status status-pending">PENDING</span>
+    </div>
+    <div class="test-row" id="test-rest-endpoint">
+      <span class="test-name">3. REST API endpoint responds</span>
+      <span class="test-status status-pending">PENDING</span>
+    </div>
+    <div class="test-row" id="test-anon-key">
+      <span class="test-name">4. Anon key is valid (JWT decode)</span>
+      <span class="test-status status-pending">PENDING</span>
+    </div>
+    <div class="test-row" id="test-cors">
+      <span class="test-name">5. CORS allows extension origin</span>
+      <span class="test-status status-pending">PENDING</span>
+    </div>
+    <div class="test-row" id="test-google-provider">
+      <span class="test-name">6. Google OAuth provider configured</span>
+      <span class="test-status status-pending">PENDING</span>
+    </div>
+  </div>
+
+  <h2>Auth Tests</h2>
+  <div class="card" id="auth-tests">
+    <div class="test-row" id="test-signup">
+      <span class="test-name">7. Sign up with email/password</span>
+      <span class="test-status status-pending">PENDING</span>
+    </div>
+    <div class="test-row" id="test-login">
+      <span class="test-name">8. Sign in with email/password</span>
+      <span class="test-status status-pending">PENDING</span>
+    </div>
+    <div class="test-row" id="test-get-user">
+      <span class="test-name">9. Fetch user profile with token</span>
+      <span class="test-status status-pending">PENDING</span>
+    </div>
+    <div class="test-row" id="test-db-access">
+      <span class="test-name">10. Database (conversations table) accessible</span>
+      <span class="test-status status-pending">PENDING</span>
+    </div>
+  </div>
+
+  <h2>Raw Logs</h2>
+  <div class="log-area" id="log-area"></div>
+
+<script>
+  // ---- Config (same as supabase.js) ----
+  const SUPABASE_URL = 'https://glogzopsxrgjkqltwjto.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdsb2d6b3BzeHJnamtxbHR3anRvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1OTU0ODQsImV4cCI6MjA5MTE3MTQ4NH0.QuEuwySt1nyAnQp_YWv6mLIAbLYsIDL8-uIrsuSogNw';
+
+  const logArea = document.getElementById('log-area');
+
+  function log(msg) {
+    const ts = new Date().toISOString().slice(11, 23);
+    logArea.textContent += `[${ts}] ${msg}\n`;
+    logArea.scrollTop = logArea.scrollHeight;
+    console.log(msg);
+  }
+
+  function setStatus(testId, status, detail) {
+    const row = document.getElementById(testId);
+    if (!row) return;
+    const statusEl = row.querySelector('.test-status');
+    statusEl.className = `test-status status-${status}`;
+    statusEl.textContent = status.toUpperCase();
+
+    // Remove old detail
+    const oldDetail = row.querySelector('.test-detail');
+    if (oldDetail) oldDetail.remove();
+
+    if (detail) {
+      const d = document.createElement('div');
+      d.className = `test-detail ${status === 'fail' ? 'error' : ''}`;
+      d.textContent = detail;
+      row.appendChild(d);
+    }
+  }
+
+  function headers(token) {
+    return {
+      'apikey': SUPABASE_ANON_KEY,
+      'Authorization': `Bearer ${token || SUPABASE_ANON_KEY}`,
+      'Content-Type': 'application/json',
+    };
+  }
+
+  // Decode JWT payload (no verification)
+  function decodeJwt(token) {
+    try {
+      const parts = token.split('.');
+      if (parts.length !== 3) return null;
+      return JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+    } catch { return null; }
+  }
+
+  // =============================================
+  // BASIC TESTS
+  // =============================================
+  async function runBasicTests() {
+    document.getElementById('btn-run-basic').disabled = true;
+    log('=== Running Connection Tests ===');
+
+    // Test 1: Health check
+    setStatus('test-health', 'running');
+    try {
+      log(`Fetching: ${SUPABASE_URL}/rest/v1/`);
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/`, {
+        method: 'GET',
+        headers: headers(),
+      });
+      log(`Health check status: ${res.status} ${res.statusText}`);
+      if (res.status === 200 || res.status === 404 || res.status === 401) {
+        setStatus('test-health', 'pass', `HTTP ${res.status} — server is reachable`);
+      } else {
+        setStatus('test-health', 'fail', `Unexpected status: ${res.status}`);
+      }
+    } catch (e) {
+      log(`Health check FAILED: ${e.message}`);
+      setStatus('test-health', 'fail', e.message);
+    }
+
+    // Test 2: Auth endpoint
+    setStatus('test-auth-endpoint', 'running');
+    try {
+      const url = `${SUPABASE_URL}/auth/v1/settings`;
+      log(`Fetching: ${url}`);
+      const res = await fetch(url, { method: 'GET', headers: headers() });
+      const data = await res.json().catch(() => ({}));
+      log(`Auth settings status: ${res.status} — data keys: ${Object.keys(data).join(', ')}`);
+
+      if (res.ok) {
+        const providers = data.external || {};
+        const enabledProviders = Object.entries(providers)
+          .filter(([, v]) => v === true)
+          .map(([k]) => k);
+        setStatus('test-auth-endpoint', 'pass', `Enabled providers: ${enabledProviders.join(', ') || 'none'}`);
+
+        // Check Google specifically
+        if (providers.google) {
+          setStatus('test-google-provider', 'pass', 'Google OAuth is enabled in Supabase');
+        } else {
+          setStatus('test-google-provider', 'fail', 'Google OAuth is NOT enabled. Go to Supabase Dashboard > Authentication > Providers > Google and enable it.');
+        }
+      } else {
+        setStatus('test-auth-endpoint', 'fail', `HTTP ${res.status}: ${JSON.stringify(data)}`);
+        setStatus('test-google-provider', 'fail', 'Cannot check — auth endpoint failed');
+      }
+    } catch (e) {
+      log(`Auth endpoint FAILED: ${e.message}`);
+      setStatus('test-auth-endpoint', 'fail', e.message);
+      setStatus('test-google-provider', 'fail', 'Cannot check — auth endpoint unreachable');
+    }
+
+    // Test 3: REST endpoint
+    setStatus('test-rest-endpoint', 'running');
+    try {
+      const url = `${SUPABASE_URL}/rest/v1/conversations?limit=1`;
+      log(`Fetching: ${url}`);
+      const res = await fetch(url, { method: 'GET', headers: headers() });
+      log(`REST status: ${res.status}`);
+      // 200 = table exists & RLS allows (or returns empty). 401/403 = RLS blocks anon. Both mean endpoint works.
+      if (res.status === 200 || res.status === 401 || res.status === 403 || res.status === 404) {
+        const body = await res.text();
+        setStatus('test-rest-endpoint', 'pass', `HTTP ${res.status} — endpoint responds. Body length: ${body.length}`);
+      } else {
+        setStatus('test-rest-endpoint', 'fail', `Unexpected HTTP ${res.status}`);
+      }
+    } catch (e) {
+      log(`REST endpoint FAILED: ${e.message}`);
+      setStatus('test-rest-endpoint', 'fail', e.message);
+    }
+
+    // Test 4: Anon key decode
+    setStatus('test-anon-key', 'running');
+    const payload = decodeJwt(SUPABASE_ANON_KEY);
+    if (payload) {
+      const exp = new Date(payload.exp * 1000);
+      const now = new Date();
+      const info = `iss=${payload.iss}, ref=${payload.ref}, role=${payload.role}, exp=${exp.toISOString()}`;
+      log(`JWT decoded: ${info}`);
+      if (exp < now) {
+        setStatus('test-anon-key', 'fail', `Key EXPIRED on ${exp.toISOString()} — generate a new one in Supabase Dashboard > Settings > API`);
+      } else {
+        setStatus('test-anon-key', 'pass', info);
+      }
+    } else {
+      setStatus('test-anon-key', 'fail', 'Could not decode JWT — key format is invalid');
+    }
+
+    // Test 5: CORS
+    setStatus('test-cors', 'running');
+    try {
+      const url = `${SUPABASE_URL}/auth/v1/token?grant_type=password`;
+      log(`CORS preflight test: ${url}`);
+      const res = await fetch(url, {
+        method: 'OPTIONS',
+        headers: { 'Origin': window.location.origin },
+      });
+      log(`CORS status: ${res.status}, headers: ${[...res.headers.entries()].map(([k,v]) => `${k}=${v}`).join('; ')}`);
+      const acao = res.headers.get('access-control-allow-origin');
+      if (acao) {
+        setStatus('test-cors', 'pass', `ACAO: ${acao}`);
+      } else {
+        // Even without explicit ACAO header, if we got a response the browser allowed it
+        setStatus('test-cors', 'pass', `HTTP ${res.status} — browser allowed the request (no explicit ACAO header)`);
+      }
+    } catch (e) {
+      setStatus('test-cors', 'fail', `CORS blocked: ${e.message}. If running from chrome-extension://, this is OK — extensions bypass CORS via host_permissions.`);
+    }
+
+    document.getElementById('btn-run-basic').disabled = false;
+    document.getElementById('btn-run-auth').disabled = false;
+    log('=== Connection Tests Complete ===\n');
+  }
+
+  // =============================================
+  // AUTH TESTS
+  // =============================================
+  async function runAuthTests() {
+    document.getElementById('btn-run-auth').disabled = true;
+    log('=== Running Auth Tests ===');
+
+    const email = document.getElementById('test-email').value.trim();
+    const password = document.getElementById('test-password').value;
+
+    if (!email || !password) {
+      log('ERROR: Please enter email and password first');
+      alert('Enter a test email and password above before running auth tests.');
+      document.getElementById('btn-run-auth').disabled = false;
+      return;
+    }
+
+    // Test 7: Sign up
+    setStatus('test-signup', 'running');
+    try {
+      const url = `${SUPABASE_URL}/auth/v1/signup`;
+      log(`Signing up: POST ${url} with email=${email}`);
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: headers(),
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json().catch(() => ({}));
+      log(`Signup status: ${res.status}`);
+      log(`Signup response: ${JSON.stringify(data, null, 2)}`);
+
+      if (res.ok) {
+        if (data.access_token) {
+          setStatus('test-signup', 'pass', `User created + auto-logged in. User ID: ${data.user?.id || data.id}`);
+        } else if (data.id || data.user?.id) {
+          setStatus('test-signup', 'pass', `User created. Email confirmation may be required. User ID: ${data.id || data.user?.id}. Check: email_confirmed_at=${data.email_confirmed_at || data.user?.email_confirmed_at || 'null'}`);
+        } else {
+          setStatus('test-signup', 'pass', `HTTP ${res.status} — response: ${JSON.stringify(data).slice(0, 200)}`);
+        }
+      } else {
+        const msg = data.error_description || data.msg || data.message || data.error || `HTTP ${res.status}`;
+        if (msg.includes('already registered') || msg.includes('already been registered')) {
+          setStatus('test-signup', 'pass', `User already exists (expected if testing repeatedly): ${msg}`);
+        } else {
+          setStatus('test-signup', 'fail', msg);
+        }
+      }
+    } catch (e) {
+      log(`Signup FAILED: ${e.message}`);
+      setStatus('test-signup', 'fail', e.message);
+    }
+
+    // Test 8: Sign in
+    setStatus('test-login', 'running');
+    let accessToken = null;
+    let userId = null;
+    try {
+      const url = `${SUPABASE_URL}/auth/v1/token?grant_type=password`;
+      log(`Signing in: POST ${url} with email=${email}`);
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: headers(),
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json().catch(() => ({}));
+      log(`Login status: ${res.status}`);
+      log(`Login response keys: ${Object.keys(data).join(', ')}`);
+
+      if (res.ok && data.access_token) {
+        accessToken = data.access_token;
+        userId = data.user?.id;
+        setStatus('test-login', 'pass', `Token received, user=${data.user?.email}, expires_in=${data.expires_in}s`);
+        log(`Access token (first 50 chars): ${accessToken.slice(0, 50)}...`);
+      } else {
+        const msg = data.error_description || data.msg || data.message || data.error || `HTTP ${res.status}`;
+        setStatus('test-login', 'fail', msg);
+        log(`Login error body: ${JSON.stringify(data, null, 2)}`);
+
+        // Common causes
+        if (msg.includes('Invalid login credentials')) {
+          log('DIAGNOSIS: "Invalid login credentials" can mean:');
+          log('  1. User does not exist (signup may have failed silently)');
+          log('  2. Password is wrong');
+          log('  3. Email confirmation is required but email was not confirmed');
+          log('  4. User was created but session was not returned (check email_confirmed_at)');
+          log('ACTION: Check Supabase Dashboard > Authentication > Users to see if the user exists and email is confirmed');
+        }
+      }
+    } catch (e) {
+      log(`Login FAILED: ${e.message}`);
+      setStatus('test-login', 'fail', e.message);
+    }
+
+    // Test 9: Get user
+    setStatus('test-get-user', 'running');
+    if (accessToken) {
+      try {
+        const url = `${SUPABASE_URL}/auth/v1/user`;
+        log(`Fetching user profile: GET ${url}`);
+        const res = await fetch(url, { method: 'GET', headers: headers(accessToken) });
+        const data = await res.json().catch(() => ({}));
+        log(`Get user status: ${res.status}`);
+
+        if (res.ok && data.id) {
+          setStatus('test-get-user', 'pass', `email=${data.email}, id=${data.id}, confirmed=${data.email_confirmed_at || 'NOT CONFIRMED'}`);
+        } else {
+          setStatus('test-get-user', 'fail', `HTTP ${res.status}: ${JSON.stringify(data)}`);
+        }
+      } catch (e) {
+        setStatus('test-get-user', 'fail', e.message);
+      }
+    } else {
+      setStatus('test-get-user', 'fail', 'Skipped — no access token from login');
+    }
+
+    // Test 10: DB access
+    setStatus('test-db-access', 'running');
+    if (accessToken && userId) {
+      try {
+        const url = `${SUPABASE_URL}/rest/v1/conversations?user_id=eq.${userId}&limit=1`;
+        log(`Querying conversations: GET ${url}`);
+        const res = await fetch(url, { method: 'GET', headers: headers(accessToken) });
+        const data = await res.json().catch(() => null);
+        log(`DB query status: ${res.status}`);
+
+        if (res.ok) {
+          setStatus('test-db-access', 'pass', `Table accessible. Rows returned: ${Array.isArray(data) ? data.length : 'non-array'}`);
+        } else if (res.status === 404) {
+          setStatus('test-db-access', 'fail', 'Table "conversations" does not exist. Run the CREATE TABLE SQL from supabase.js comments.');
+        } else {
+          const body = typeof data === 'string' ? data : JSON.stringify(data);
+          setStatus('test-db-access', 'fail', `HTTP ${res.status}: ${body}`);
+        }
+      } catch (e) {
+        setStatus('test-db-access', 'fail', e.message);
+      }
+    } else {
+      setStatus('test-db-access', 'fail', 'Skipped — no access token');
+    }
+
+    document.getElementById('btn-run-auth').disabled = false;
+    log('=== Auth Tests Complete ===\n');
+  }
+</script>
+
+</body>
+</html>

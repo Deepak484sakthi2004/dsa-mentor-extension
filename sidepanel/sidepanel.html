@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<!--
+  sidepanel.html — DSA Mentor side panel UI.
+
+  Opens when the user presses Alt+7 or clicks the toolbar icon while on a
+  supported DSA platform (LeetCode, NeetCode, TakeUForward).
+
+  Tab structure:
+    1. Mentor — Code extraction + AI chat interface
+    2. Settings — Provider/model/API key configuration
+    3. History — Saved conversation archive
+
+  Uses type="module" for sidepanel.js so it can import from the extension's
+  ES module graph (StorageManager, constants, etc.).
+
+  @author   DSA Mentor Extension
+  @created  2026-04-08
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DSA Mentor</title>
+  <link rel="stylesheet" href="../assets/styles/global.css" />
+  <link rel="stylesheet" href="sidepanel.css" />
+</head>
+<body>
+
+  <!-- ======================================================================
+       Auth Screen — shown when user is not logged in
+       ====================================================================== -->
+  <div id="auth-screen">
+
+    <!-- Brand header -->
+    <div class="auth-brand">
+      <div class="auth-brand__logo" aria-hidden="true">&#10022;</div>
+      <span class="auth-brand__title">DSA Mentor</span>
+    </div>
+    <p class="auth-subtitle-text">Your Socratic AI guide for DSA mastery</p>
+
+    <!-- Tab switcher: Login | Sign Up -->
+    <div class="auth-tabs" role="tablist" aria-label="Authentication mode">
+      <button class="auth-tab auth-tab--active"
+              id="auth-tab-login"
+              role="tab"
+              aria-selected="true"
+              aria-controls="auth-panel-login">
+        Log in
+      </button>
+      <button class="auth-tab"
+              id="auth-tab-signup"
+              role="tab"
+              aria-selected="false"
+              aria-controls="auth-panel-signup">
+        Sign up
+      </button>
+    </div>
+
+    <!-- Login form -->
+    <div id="auth-panel-login" class="auth-panel" role="tabpanel" aria-labelledby="auth-tab-login">
+      <form id="form-login" class="auth-form" novalidate>
+        <div class="auth-field">
+          <label class="auth-label" for="login-email">Email</label>
+          <input
+            type="email"
+            id="login-email"
+            class="auth-input"
+            placeholder="you@example.com"
+            autocomplete="email"
+            required
+          />
+        </div>
+        <div class="auth-field">
+          <label class="auth-label" for="login-password">Password</label>
+          <input
+            type="password"
+            id="login-password"
+            class="auth-input"
+            placeholder="Your password"
+            autocomplete="current-password"
+            required
+          />
+        </div>
+        <button type="submit" class="btn btn--primary btn--full auth-submit" id="btn-login">
+          Sign in
+        </button>
+        <button type="button" class="auth-forgot-link" id="btn-forgot-password">
+          Forgot password?
+        </button>
+      </form>
+    </div>
+
+    <!-- Forgot Password panel -->
+    <div id="auth-panel-forgot" class="auth-panel auth-panel--hidden">
+      <form id="form-forgot" class="auth-form" novalidate>
+        <p class="auth-forgot-desc">Enter your email and we'll send you a link to reset your password.</p>
+        <div class="auth-field">
+          <label class="auth-label" for="forgot-email">Email</label>
+          <input
+            type="email"
+            id="forgot-email"
+            class="auth-input"
+            placeholder="you@example.com"
+            autocomplete="email"
+            required
+          />
+        </div>
+        <button type="submit" class="btn btn--primary btn--full auth-submit" id="btn-forgot-submit">
+          Send reset link
+        </button>
+        <button type="button" class="auth-forgot-link" id="btn-back-to-login">
+          Back to login
+        </button>
+      </form>
+      <div id="forgot-success" class="auth-forgot-success auth-panel--hidden">
+        <p class="auth-forgot-success-text">Check your email for a password reset link. It may take a minute to arrive.</p>
+        <button type="button" class="auth-forgot-link" id="btn-back-to-login-2">
+          Back to login
+        </button>
+      </div>
+    </div>
+
+    <!-- Sign Up form -->
+    <div id="auth-panel-signup" class="auth-panel auth-panel--hidden" role="tabpanel" aria-labelledby="auth-tab-signup">
+      <form id="form-signup" class="auth-form" novalidate>
+        <div class="auth-field">
+          <label class="auth-label" for="signup-email">Email</label>
+          <input
+            type="email"
+            id="signup-email"
+            class="auth-input"
+            placeholder="you@example.com"
+            autocomplete="email"
+            required
+          />
+        </div>
+        <div class="auth-field">
+          <label class="auth-label" for="signup-password">Password</label>
+          <input
+            type="password"
+            id="signup-password"
+            class="auth-input"
+            placeholder="At least 6 characters"
+            autocomplete="new-password"
+            required
+            minlength="6"
+          />
+        </div>
+        <div class="auth-field">
+          <label class="auth-label" for="signup-confirm">Confirm password</label>
+          <input
+            type="password"
+            id="signup-confirm"
+            class="auth-input"
+            placeholder="Repeat your password"
+            autocomplete="new-password"
+            required
+          />
+        </div>
+        <button type="submit" class="btn btn--primary btn--full auth-submit" id="btn-signup">
+          Create account
+        </button>
+      </form>
+    </div>
+
+    <!-- Divider -->
+    <div class="auth-divider">
+      <span class="auth-divider__line"></span>
+      <span class="auth-divider__text">or</span>
+      <span class="auth-divider__line"></span>
+    </div>
+
+    <!-- Google OAuth button -->
+    <button class="auth-google-btn" id="btn-google-auth" type="button">
+      <!-- Google "G" logo as inline SVG — no external resource needed -->
+      <svg class="auth-google-btn__icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+        <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+        <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
+        <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+      </svg>
+      <span>Continue with Google</span>
+    </button>
+
+    <!-- Inline error area — shown on auth failures -->
+    <div id="auth-error" class="auth-error auth-error--hidden" role="alert" aria-live="assertive">
+      <span id="auth-error-text"></span>
+    </div>
+
+  </div><!-- /#auth-screen -->
+
+  <!-- ======================================================================
+       App Shell — hidden until user is authenticated
+       ====================================================================== -->
+  <div id="app" style="display:none">
+
+    <!-- Header -->
+    <header class="panel-header">
+      <div class="panel-header__brand">
+        <span class="panel-header__logo" aria-hidden="true">&#10022;</span>
+        <span class="panel-header__title">DSA Mentor</span>
+        <span class="panel-header__subtitle">Socratic AI Guide</span>
+        <!-- Logout button — shown only when authenticated, positioned in header right -->
+        <button class="btn btn--ghost btn--sm header-logout-btn"
+                id="btn-logout"
+                type="button"
+                title="Sign out"
+                aria-label="Sign out">
+          Sign out
+        </button>
+      </div>
+      <!-- Tab navigation -->
+      <nav class="tab-nav" role="tablist" aria-label="Panel sections">
+        <button class="tab-nav__btn tab-nav__btn--active"
+                role="tab"
+                aria-selected="true"
+                aria-controls="tab-mentor"
+                id="btn-tab-mentor"
+                data-tab="mentor">
+          Mentor
+        </button>
+        <button class="tab-nav__btn"
+                role="tab"
+                aria-selected="false"
+                aria-controls="tab-settings"
+                id="btn-tab-settings"
+                data-tab="settings">
+          Settings
+        </button>
+        <button class="tab-nav__btn"
+                role="tab"
+                aria-selected="false"
+                aria-controls="tab-history"
+                id="btn-tab-history"
+                data-tab="history">
+          History
+        </button>
+      </nav>
+    </header>
+
+    <!-- ====================================================================
+         Tab 1: Mentor
+         ==================================================================== -->
+    <section id="tab-mentor"
+             class="tab-panel tab-panel--active"
+             role="tabpanel"
+             aria-labelledby="btn-tab-mentor">
+
+      <!-- Problem context bar (hidden until code is extracted) -->
+      <div id="problem-bar" class="problem-bar problem-bar--hidden">
+        <div class="problem-bar__info">
+          <span id="problem-title" class="problem-bar__title truncate">Unknown Problem</span>
+          <span id="problem-platform" class="badge badge--platform">unknown</span>
+        </div>
+        <span id="problem-language" class="badge badge--language">--</span>
+      </div>
+
+      <!-- Welcome / extraction prompt (shown before first extraction) -->
+      <div id="welcome-section" class="welcome-section">
+        <div class="welcome-section__icon" aria-hidden="true">✦</div>
+        <h2 class="welcome-section__title">Welcome to DSA Mentor</h2>
+        <p class="welcome-section__body">
+          Navigate to a problem on LeetCode, NeetCode, or TakeUForward, then click
+          <strong>Extract Code</strong> to load the problem context.
+        </p>
+        <button id="btn-extract-welcome" class="btn btn--primary btn--full">
+          Extract Code from Page
+        </button>
+        <p class="welcome-section__hint">
+          No API key yet? Go to the <button class="link-btn" data-tab-link="settings">Settings tab</button>
+          to add one.
+        </p>
+      </div>
+
+      <!-- Extraction bar (shown after code is loaded to allow re-extraction) -->
+      <div id="extraction-bar" class="extraction-bar extraction-bar--hidden">
+        <button id="btn-extract" class="btn btn--secondary btn--sm">
+          &#8635; Re-extract Code
+        </button>
+        <button id="btn-clear-chat" class="btn btn--ghost btn--sm">
+          Clear Chat
+        </button>
+      </div>
+
+      <!-- Extraction status message -->
+      <div id="extraction-status" class="status-msg status-msg--hidden" aria-live="polite"></div>
+
+      <!-- Chat thread -->
+      <div id="chat-thread" class="chat-thread" aria-label="Conversation" aria-live="polite">
+        <!-- Messages are injected here by sidepanel.js -->
+      </div>
+
+      <!-- Error display -->
+      <div id="chat-error" class="error-banner error-banner--hidden" role="alert" aria-live="assertive">
+        <span id="chat-error-text"></span>
+        <button class="error-banner__close" id="btn-close-error" aria-label="Dismiss error">&#10005;</button>
+      </div>
+
+      <!-- Input area (hidden until code is extracted) -->
+      <div id="input-area" class="input-area input-area--hidden">
+        <div class="input-area__box">
+          <textarea
+            id="user-input"
+            class="input-area__textarea"
+            placeholder="Ask about the problem..."
+            rows="1"
+            aria-label="Your message to the mentor"
+          ></textarea>
+          <button id="btn-get-hint" class="input-area__send" aria-label="Get hint">
+            &#8593;
+          </button>
+        </div>
+        <div class="input-area__footer">
+          <span id="hint-status" class="hint-status hint-status--hidden">
+            <span class="thinking-dots" aria-hidden="true"><span></span><span></span><span></span></span>
+            Thinking...
+          </span>
+          <span class="input-area__shortcut"><kbd>Ctrl</kbd>+<kbd>Enter</kbd></span>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ====================================================================
+         Tab 2: Settings
+         ==================================================================== -->
+    <section id="tab-settings"
+             class="tab-panel"
+             role="tabpanel"
+             aria-labelledby="btn-tab-settings"
+             hidden>
+
+      <div class="settings-section">
+        <h3 class="settings-section__title">AI Provider</h3>
+
+        <!-- Provider radio buttons -->
+        <div class="provider-grid" role="group" aria-label="Select AI provider">
+          <label class="provider-card" data-provider="claude">
+            <input type="radio" name="provider" value="claude" />
+            <span class="provider-card__icon">🤖</span>
+            <span class="provider-card__name">Claude</span>
+            <span class="provider-card__sub">Anthropic</span>
+          </label>
+          <label class="provider-card" data-provider="openai">
+            <input type="radio" name="provider" value="openai" />
+            <span class="provider-card__icon">⚡</span>
+            <span class="provider-card__name">GPT</span>
+            <span class="provider-card__sub">OpenAI</span>
+          </label>
+          <label class="provider-card" data-provider="gemini">
+            <input type="radio" name="provider" value="gemini" />
+            <span class="provider-card__icon">✨</span>
+            <span class="provider-card__name">Gemini</span>
+            <span class="provider-card__sub">Google</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <h3 class="settings-section__title">Model</h3>
+        <select id="model-select" class="form-select" aria-label="Select model">
+          <!-- Options populated dynamically based on selected provider -->
+        </select>
+      </div>
+
+      <div class="settings-section">
+        <h3 class="settings-section__title">API Key</h3>
+        <div class="api-key-row">
+          <input
+            type="password"
+            id="api-key-input"
+            class="form-input"
+            placeholder="Paste your API key here"
+            aria-label="API key for the selected provider"
+            autocomplete="off"
+            spellcheck="false"
+          />
+          <button id="btn-toggle-key-visibility" class="btn btn--ghost btn--icon" aria-label="Show/hide API key">
+            &#128065;
+          </button>
+        </div>
+        <div id="api-key-status" class="api-key-status" aria-live="polite"></div>
+        <button id="btn-save-settings" class="btn btn--primary btn--full" style="margin-top: var(--space-3)">
+          Save Settings
+        </button>
+        <div id="settings-save-msg" class="save-msg save-msg--hidden" aria-live="polite"></div>
+      </div>
+
+      <div class="settings-section settings-section--info">
+        <h3 class="settings-section__title">Where to get API keys</h3>
+        <ul class="api-key-guide">
+          <li><strong>Claude:</strong> <a href="https://console.anthropic.com/" target="_blank">console.anthropic.com</a></li>
+          <li><strong>OpenAI:</strong> <a href="https://platform.openai.com/api-keys" target="_blank">platform.openai.com/api-keys</a></li>
+          <li><strong>Gemini:</strong> <a href="https://aistudio.google.com/app/apikey" target="_blank">aistudio.google.com</a></li>
+        </ul>
+        <p class="settings-note">
+          API keys are stored locally in your browser and never sent anywhere except the AI provider's API.
+        </p>
+      </div>
+
+    </section>
+
+    <!-- ====================================================================
+         Tab 3: History
+         ==================================================================== -->
+    <section id="tab-history"
+             class="tab-panel"
+             role="tabpanel"
+             aria-labelledby="btn-tab-history"
+             hidden>
+
+      <div class="history-header">
+        <h3 class="history-header__title">Saved Conversations</h3>
+        <a href="../dashboard/dashboard.html" target="_blank" class="btn btn--ghost btn--sm">
+          Open Dashboard &#8599;
+        </a>
+      </div>
+
+      <!-- History list -->
+      <div id="history-list" class="history-list" aria-label="Conversation history" aria-live="polite">
+        <!-- Populated by sidepanel.js -->
+      </div>
+
+      <div id="history-empty" class="empty-state empty-state--hidden">
+        <div class="empty-state__icon">📭</div>
+        <p>No saved conversations yet.</p>
+        <p class="empty-state__hint">Conversations are auto-saved after your first hint on any problem.</p>
+      </div>
+
+    </section>
+
+  </div><!-- /#app -->
+
+  <!-- Side panel JS — must be type="module" to use ES imports -->
+  <script type="module" src="sidepanel.js"></script>
+</body>
+</html>
